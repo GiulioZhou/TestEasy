@@ -1,0 +1,303 @@
+<html lang="en" >
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+  <!-- Angular Material style sheet -->
+  <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0-rc2/angular-material.min.css">
+  <!-- Angular Material requires Angular.js Libraries -->
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-animate.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-aria.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-messages.min.js"></script>
+
+  <!-- Angular Material Library -->
+  <script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0-rc2/angular-material.min.js"></script>
+
+
+<script>
+
+ var app = angular.module('myApp', ['ngMaterial']);
+ app.config(function($interpolateProvider){
+     $interpolateProvider.startSymbol('{[{').endSymbol('}]}');
+     });
+//define authentication service
+app.factory('AuthService',  ['$q', '$timeout', '$http',
+  function ($q, $timeout, $http) {
+
+    // create user variable
+    var user = null;
+
+    // return available functions for use in controllers
+    return ({
+      isLoggedIn: isLoggedIn,
+      login: login,
+      logout: logout,
+      register: register
+    });
+
+
+function isLoggedIn() {
+  console.log(user);
+  if(user) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function login(email, password) {
+  // create a new instance of deferred
+  var deferred = $q.defer();
+  // send a post request to the server
+  $http.post('/api/login', {email: email, pass: password})
+    // handle success
+    .success(function (data, status) {
+      if(status === 200 && data.result){
+        user = true;
+        deferred.resolve();
+        console.log(data.result);
+      } else {
+        user = false;
+        deferred.reject();
+      }
+    })
+    // handle error
+    .error(function (data) {
+      user = false;
+      deferred.reject();
+    });
+
+  // return promise object
+  return deferred.promise;
+
+}
+
+function logout() {
+
+  // create a new instance of deferred
+  var deferred = $q.defer();
+
+  // send a get request to the server
+  $http.get('/api/logout')
+    // handle success
+    .success(function (data) {
+      user = false;
+      deferred.resolve();
+    })
+    // handle error
+    .error(function (data) {
+      user = false;
+      deferred.reject();
+    });
+
+  // return promise object
+  return deferred.promise;
+
+}
+
+function register(given_name, family_name, email, pass, sex) {
+
+  // create a new instance of deferred
+  var deferred = $q.defer();
+
+  // send a post request to the server
+  $http.post('/api/register', { given_name: given_name,
+   family_name: family_name,
+   email: email,
+    pass: pass,
+   sex: sex
+})
+    // handle success
+    .success(function (data, status) {
+      if(status === 200 && data.result){
+        console.log(data.result);
+        console.log("utente registrato");
+
+        deferred.resolve();
+      } else {
+        console.log(data.result);
+        console.log("utente non registrato");
+        deferred.reject();
+      }
+    })
+    // handle error
+    .error(function (data) {
+      console.log("errore");
+      deferred.reject();
+    });
+
+  // return promise object
+  return deferred.promise;
+
+}
+
+
+
+
+}]);
+
+
+
+app.controller("loginController", ['$scope','$location', 'AuthService', '$mdDialog',
+        function ($scope, $location, AuthService, $mdDialog) {
+
+  $scope.loginForm={
+        email: "",
+        password:""
+ };
+
+ $scope.regiForm={
+       given_name: "",
+       family_name: "",
+       email: "",
+        pass: "",
+       sex: ""
+   };
+        $scope.login = function () {
+
+      // initial values
+      $scope.error = false;
+      $scope.disabled = true;
+
+      // call login from service
+      AuthService.login($scope.loginForm.email, $scope.loginForm.password)
+        // handle success
+        .then(function () {
+          $location.path('/');
+          $scope.disabled = false;
+          $scope.loginForm = {};
+        })
+        // handle error
+        .catch(function () {
+          $scope.error = true;
+          $scope.errorMessage = "Invalid username and/or password";
+          $scope.disabled = false;
+          $scope.loginForm = {};
+        });
+    };
+
+
+      $scope.logout = function () {
+
+       // call logout from service
+       AuthService.logout()
+         .then(function () {
+           $location.path('/');
+         });
+
+     };
+     $scope.isLoggedIn = function () {
+
+      // call logout from service
+      AuthService.isLoggedIn()
+        .then(function () {
+          $location.path('/');
+        });
+
+     };
+
+     $scope.register = function () {
+
+      // initial values
+      $scope.error = false;
+      $scope.disabled = true;
+
+      // call register from service
+      AuthService.register($scope.regiForm.given_name, $scope.regiForm.family_name,$scope.regiForm.email,
+                           $scope.regiForm.password, $scope.regiForm.sex)
+        // handle success
+        .then(function () {
+          $location.path('/');
+          $scope.disabled = false;
+          $scope.registerForm = {};
+        })
+        // handle error
+        .catch(function () {
+          $scope.error = true;
+          $scope.errorMessage = "Something went wrong!";
+          $scope.disabled = false;
+          $scope.registerForm = {};
+        });
+
+    };
+
+}]);
+
+
+</script>
+
+</head>
+
+
+<body ng-app="myApp" ng-controller="loginController">
+
+
+<div layout="column" >
+
+                <form ng-submit="login()">
+
+                        <md-input-container class="md-block">
+                                <label>Username</label>
+                                <input type="text" class="form-control" name="email" ng-model="loginForm.email" required>
+                        </md-input-container>
+
+                        </md-input-container>
+                        <md-input-container class="md-block">
+                                <label>Password</label>
+                                <input type="password" class="form-control" name="password" ng-model="loginForm.password" required>
+                        </md-input-container>
+
+                        <div layout="column" class="user">
+                              <md-button type="submit" ng-disabled="disabled" class="md-raised md-accent md-fab-button"> Log in </md-button>
+			</div>
+                </form>
+                <md-button ng-disabled="disabled" class="md-raised md-accent md-fab-button" ng-click="logout()"> Log Out </md-button>
+                <md-button ng-disabled="disabled" class="md-raised md-accent md-fab-button" ng-click="isLoggedIn()"> Test </md-button>
+
+                <p>{[{loginForm.email}]}</p>
+
+</div>
+<div>
+  <form ng-submit="register()">
+
+<div layout-gt-xs="row">
+                <md-input-container class="md-block" flex-gt-xs >
+                        <label>First Name</label>
+                        <input ng-model="regiForm.given_name" required>
+                </md-input-container>
+
+                <md-input-container class="md-block" flex-gt-xs >
+                        <label>Last Name</label>
+                        <input ng-model="regiForm.family_name" required>
+                </md-input-container>
+        </div>
+
+
+        <md-input-container class="md-block" >
+        <label>Email</label>
+        <input ng-model="regiForm.email" type="email" required>
+</md-input-container>
+
+<md-input-container class="md-block">
+                <label>Password</label>
+                <input ng-model="regiForm.password" type="password" required>
+        </md-input-container>
+
+        <md-radio-group ng-model="regiForm.sex" layout layout-align="center" layout-wrap layout-padding required>
+
+            <md-radio-button value="Male"> Male </md-radio-button>
+            <md-radio-button value="Female"> Female </md-radio-button>
+            <md-radio-button value="Banana"> Banana </md-radio-button>
+
+        </md-radio-group>
+        <div layout="column">
+                <md-button type="submit" class="md-raised md-accent md-fab-button" > Register </md-button>
+        </div>
+
+</form>
+
+</div>
+
+</body>
+</html>
