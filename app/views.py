@@ -11,7 +11,18 @@ def get_static_json_file(filename):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-        return render_template('index.html')
+    return render_template('index.html')
+
+@app.route('/api/get', methods=['GET'])
+def getta():
+    print("sono qui dentro")
+    print(request.args["user_id"])
+    return "ciao"
+
+
+@app.route('/prova', methods=['GET', 'POST'])
+def ciao():
+    return render_template('prova.html')
 
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -39,7 +50,11 @@ def login():
                 if user["email"]==json_data["email"] and user["pass"]==json_data["pass"]:
                         #session NON FUNZIONA
                         session['logged_in'] = True
+                        session['email'] = user["email"]
+                        session['name'] = user["given_name"]
+                        session['surname'] = user["family_name"]
                         status = True
+			print session
                         break
         return jsonify({'result': status})
 
